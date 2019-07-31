@@ -15,7 +15,7 @@ public class PerfisConverter implements Converter<String[], List<Perfil>>{
 	public List<Perfil> convert(String[] source) {
 		List<Perfil> perfis = new ArrayList<Perfil>();
 		for (String id : source) {
-			if (id.equals("0")) {
+			if (!id.equals("0")) {
 				perfis.add(new Perfil(Long.valueOf(id)));
 			}
 		}

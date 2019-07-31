@@ -2,6 +2,7 @@ package com.mballem.curso.security.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -70,5 +71,16 @@ public class UsuarioService implements UserDetailsService {
 		String crypt = new BCryptPasswordEncoder().encode(usuario.getSenha());
 		usuario.setSenha(crypt);
 		usuarioRepository.save(usuario);		
+	}
+	
+	@Transactional(readOnly = true)
+	public Usuario buscarPorId(Long id) {
+		return usuarioRepository.findById(id).get();		
+	}
+
+	@Transactional(readOnly = true)
+	public Usuario buscarPorIdEPerfis(Long usuarioId, Long[] perfisId) {
+		return usuarioRepository.findByIdAndPerfis(usuarioId, perfisId)
+				.orElseThrow(() -> new UsernameNotFoundException("Usuário inexistente!"));
 	}
 }

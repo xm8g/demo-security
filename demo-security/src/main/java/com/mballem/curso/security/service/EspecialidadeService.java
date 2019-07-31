@@ -1,6 +1,8 @@
 package com.mballem.curso.security.service;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -48,6 +50,25 @@ public class EspecialidadeService {
 	@Transactional(readOnly = false)
 	public void remover(Long id) {
 		repository.deleteById(id);
+	}
+
+	@Transactional(readOnly = true)
+	public List<String> buscarEspecialidadeByTermo(String termo) {
+		
+		return repository.findEspecialidadeByTermo(termo);
+	}
+
+	public Set<Especialidade> buscarPorTitulos(String[] titulos) {
+		return repository.findByTitulos(titulos);
+	}
+
+	@Transactional(readOnly = true)
+	public Map<String, Object> buscarEspecialidadesPorMedico(Long id, HttpServletRequest request) {
+		dataTables.setRequest(request);
+		dataTables.setColunas(DatatablesColunas.ESPECIALIDADES);
+		Page<Especialidade> page = repository.findByMedico(id, dataTables.getPageable());
+		
+		return dataTables.getResponse(page);
 	}
 
 }

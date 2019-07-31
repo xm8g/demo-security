@@ -26,8 +26,7 @@
 
 						<div th:replace="fragments/alert :: alerta-sucesso"></div>
 
-						<form th:action="@{/u/cadastro/salvar}"
-								th:object="${usuario}" method="POST" class="was-validated">
+						<form th:action="@{/u/cadastro/salvar}" th:object="${usuario}" method="POST" class="was-validated">
 							
 							<div class="mb-3">
 								<label for="email">Email</label>
@@ -95,6 +94,14 @@
 
 	</section>
 	<script	th:src="~{}" th:fragment="js"></script>
-	<script th:inline="javascript" th:fragment="inlinescript"></script>
+	<script th:inline="javascript" th:fragment="inlinescript">
+	/*Capítulo 29 do curso - Permite acesso ao model 'usuario' dentro do javascript */
+		$('#perfis').ready(function() {
+			var perfis = [[${usuario.perfis}]];
+			$.each(perfis, function(k ,v) {
+				$('#perfis option[value="'+v.id+'"]').attr('selected', 'selected');
+			})
+		});
+	</script>
 </body>
 </html>

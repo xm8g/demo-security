@@ -1,0 +1,12 @@
+core.ignore.recursive= \
+	{*.class} 
+
+core.ignore= \
+	{.apt_generated} \
+	{.classpath} \
+	{.project} \
+	{.settings} \
+	{.factorypath} \
+	{bin} \
+	{generated_src} \
+	{target} 

@@ -1,12 +1,8 @@
-core.ignore.recursive= \
-	{*.class} 
+# Eclipse
+.classpath
+.project
+.settings/
 
-core.ignore= \
-	{.apt_generated} \
-	{.classpath} \
-	{.project} \
-	{.settings} \
-	{.factorypath} \
-	{bin} \
-	{generated_src} \
-	{target} 
+# Maven
+log/
+target/

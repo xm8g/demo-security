@@ -17,4 +17,14 @@ public class ExceptionController {
 		
 		return model;
 	}
+	
+	@ExceptionHandler(AcessoNegadoException.class)
+	public ModelAndView acessoNegadoException(AcessoNegadoException exception) {
+		ModelAndView model = new ModelAndView("error");
+		model.addObject("status", 403);
+		model.addObject("error", "Operação não permitida.");
+		model.addObject("message", exception.getMessage());
+		
+		return model;
+	}
 }

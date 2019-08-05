@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mballem.curso.security.datatables.Datatables;
 import com.mballem.curso.security.datatables.DatatablesColunas;
 import com.mballem.curso.security.domain.Perfil;
+import com.mballem.curso.security.domain.PerfilTipo;
 import com.mballem.curso.security.domain.Usuario;
 import com.mballem.curso.security.repository.UsuarioRepository;
 
@@ -38,7 +39,7 @@ public class UsuarioService implements UserDetailsService {
 
 	@Override @Transactional(readOnly = true)
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		Usuario usuario = buscarPorEmail(username);
+		Usuario usuario = buscarPorEmailEAtivo(username).orElseThrow(() -> new UsernameNotFoundException("Usuário " + username + " não está ativo ou não foi encontrado."));
 		
 		return new User(
 				usuario.getEmail(), 
@@ -82,5 +83,29 @@ public class UsuarioService implements UserDetailsService {
 	public Usuario buscarPorIdEPerfis(Long usuarioId, Long[] perfisId) {
 		return usuarioRepository.findByIdAndPerfis(usuarioId, perfisId)
 				.orElseThrow(() -> new UsernameNotFoundException("Usuário inexistente!"));
+	}
+	
+	public static boolean isSenhaCorreta(String senhaDigitada, String senhaArmazenada) {
+		return new BCryptPasswordEncoder().matches(senhaDigitada, senhaArmazenada);
+	}
+
+	@Transactional(readOnly = false)
+	public void alterarSenha(Usuario usuario, String senha) {
+		usuario.setSenha(new BCryptPasswordEncoder().encode(senha));
+		usuarioRepository.save(usuario);
+	}
+
+	@Transactional(readOnly = false)
+	public void salvarCadastroPaciente(Usuario usuario) {
+		String crypt = new BCryptPasswordEncoder().encode(usuario.getSenha());
+		usuario.setSenha(crypt);
+		usuario.addPerfil(PerfilTipo.PACIENTE);
+		
+		usuarioRepository.save(usuario);
+	}
+	
+	@Transactional(readOnly = true)
+	public Optional<Usuario> buscarPorEmailEAtivo(String email) {
+		return usuarioRepository.findByEmailAndAtivo(email);
 	}
 }

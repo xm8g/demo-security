@@ -1,5 +1,7 @@
 package com.mballem.curso.security.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,5 +48,16 @@ public class MedicoService {
 		//Pega o médico persistido (Estado Persistente), a remoção acontecerá diretmente 
 		//no banco de relacionamento entre medico e especialidade
 		medico.getEspecialidades().removeIf(e -> e.getId().equals(idEsp));
+	}
+
+	@Transactional(readOnly = true)
+	public List<Medico> buscarMedicosPorEspecialidade(String especialidade) {
+		return medicoRepository.findMedicosByEspecialidade(especialidade);
+	}
+
+	@Transactional(readOnly = true)
+	public boolean existeEspecialidadeAgendada(Long idMed, Long idEsp) {
+		
+		return medicoRepository.hasEspecilidadeAgendada(idMed, idEsp).isPresent();
 	}
 }

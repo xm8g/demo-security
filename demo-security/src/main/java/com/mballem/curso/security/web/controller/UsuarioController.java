@@ -2,8 +2,8 @@ package com.mballem.curso.security.web.controller;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
+import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,7 +29,7 @@ import com.mballem.curso.security.domain.Usuario;
 import com.mballem.curso.security.service.MedicoService;
 import com.mballem.curso.security.service.UsuarioService;
 
-@Controller
+//@Controller
 @RequestMapping("u")
 public class UsuarioController {
 
@@ -145,7 +146,7 @@ public class UsuarioController {
 	}
 	
 	@PostMapping("/cadastro/paciente/salvar")
-	public String salvar(Usuario usuario, BindingResult result) {
+	public String salvar(Usuario usuario, BindingResult result) throws MessagingException {
 		try {
 			service.salvarCadastroPaciente(usuario);
 		} catch (DataIntegrityViolationException e) {
@@ -153,6 +154,48 @@ public class UsuarioController {
 			return "cadastrar-se";
 		}
 		return "redirect:/u/cadastro/realizado";
+	}
+	
+	@GetMapping("/confirmacao/cadastro")
+	public String respostaConfirmacaoCadastroPaciente(@RequestParam("codigo") String codigo, RedirectAttributes attr) {
+		service.ativarCadastroPaciente(codigo);
+		
+		attr.addFlashAttribute("alerta", "sucesso");
+		attr.addFlashAttribute("titulo", "Cadastro Ativado!");
+		attr.addFlashAttribute("texto", "Parabéns, seu cadastro está ativo.");
+		attr.addFlashAttribute("subtexto", "Pode logar.");
+		
+		return "redirect:/login";
+	}
+	
+	@GetMapping("p/redefinir/senha")
+	public String pedidoRedefinirSenha() {
+		
+		return "usuario/pedido-recuperar-senha";
+	}
+	
+	@GetMapping("p/recuperar/senha")
+	public String redefinirSenha(String email, ModelMap model) throws MessagingException {
+		service.pedidoRedefinicaoSenha(email);
+		model.addAttribute("sucesso", "Em instantes você receberá um email para redefinir sua senha");
+				
+		return "usuario/recuperar-senha";
+	}
+	
+	@PostMapping("p/nova/senha")
+	public String confirmacaoRedefinirSenha(Usuario usuario, ModelMap model) throws MessagingException {
+		Usuario u = service.buscarPorEmail(usuario.getEmail());
+		if (!u.getCodigoVerificador().equals(usuario.getCodigoVerificador())) {
+			model.addAttribute("falha", "Código verificador não confere!");
+			return "usuario/recuperar-senha";
+		}
+		u.setCodigoVerificador(null);
+		service.alterarSenha(u, usuario.getSenha());
+		model.addAttribute("alerta", "sucesso");
+		model.addAttribute("titulo", "Senha redefinida!");
+		model.addAttribute("texto", "Já pode logar no sistema.");
+				
+		return "login";
 	}
 	
 }

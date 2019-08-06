@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -16,6 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Base64Utils;
 
 import com.mballem.curso.security.datatables.Datatables;
 import com.mballem.curso.security.datatables.DatatablesColunas;
@@ -23,6 +26,7 @@ import com.mballem.curso.security.domain.Perfil;
 import com.mballem.curso.security.domain.PerfilTipo;
 import com.mballem.curso.security.domain.Usuario;
 import com.mballem.curso.security.repository.UsuarioRepository;
+import com.mballem.curso.security.web.exception.AcessoNegadoException;
 
 @Service
 public class UsuarioService implements UserDetailsService {
@@ -31,6 +35,8 @@ public class UsuarioService implements UserDetailsService {
 	private UsuarioRepository usuarioRepository;
 	@Autowired
 	private Datatables dataTables;
+	@Autowired
+	private EmailService emailService;
 	
 	@Transactional(readOnly = true)
 	public Usuario buscarPorEmail(String email) {
@@ -96,16 +102,42 @@ public class UsuarioService implements UserDetailsService {
 	}
 
 	@Transactional(readOnly = false)
-	public void salvarCadastroPaciente(Usuario usuario) {
+	public void salvarCadastroPaciente(Usuario usuario) throws MessagingException {
 		String crypt = new BCryptPasswordEncoder().encode(usuario.getSenha());
 		usuario.setSenha(crypt);
 		usuario.addPerfil(PerfilTipo.PACIENTE);
 		
 		usuarioRepository.save(usuario);
+		emailDeConfirmacaoDeCadastro(usuario.getEmail());
 	}
 	
 	@Transactional(readOnly = true)
 	public Optional<Usuario> buscarPorEmailEAtivo(String email) {
 		return usuarioRepository.findByEmailAndAtivo(email);
+	}
+	
+	public void emailDeConfirmacaoDeCadastro(String email) throws MessagingException {
+		String codigo = Base64Utils.encodeToString(email.getBytes());
+		emailService.enviarEmailConfirmacaoCadastro(email, codigo);
+	}
+	
+	@Transactional(readOnly = false)
+	public void ativarCadastroPaciente(String codigo) {
+		String email = new String(Base64Utils.decodeFromString(codigo));
+		Usuario u = buscarPorEmail(email);
+		if (u.hasNotId()) {
+			throw new AcessoNegadoException("Não foi possível ativar seu cadastro. Usuario sem ID.");
+		}
+		u.setAtivo(true);
+	}
+
+	@Transactional(readOnly = false)
+	public void pedidoRedefinicaoSenha(String email) throws MessagingException {
+		Usuario u = buscarPorEmailEAtivo(email).orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado!"));
+		
+		String verificador = RandomStringUtils.randomAlphanumeric(6);
+		u.setCodigoVerificador(verificador);
+		
+		emailService.enviarPedidoRedefinicaoSenha(email, verificador);
 	}
 }
